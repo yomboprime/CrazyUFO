@@ -1,0 +1,22 @@
+{
+  "name": "CrazyUFO",
+  "version": "1.0.0",
+  "description": "Game about a crazy UFO.",
+  "main": "index.js",
+  "scripts": {
+    "build": "rollup -c \"rollup_config.js\"",
+    "start": "serve",
+	"postbuild": "cp ./assets/* ./app"
+  },
+  "author": "yomboprime",
+  "license": "MIT",
+  "dependencies": {
+    "three": "^0.140.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "13.1.3",
+    "rollup": "2.67.2",
+    "rollup-plugin-terser": "7.0.2",
+    "serve": "13.0.2"
+  }
+}
