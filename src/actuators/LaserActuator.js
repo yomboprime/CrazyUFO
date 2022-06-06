@@ -31,6 +31,7 @@ class LaserActuator extends Actuator {
 	addTo( object ) {
 
 		this.object = object;
+		this.active = true;
 
 		this.game.loadSVG( './spark.svg', {}, ( spark ) => {
 
@@ -61,7 +62,7 @@ class LaserActuator extends Actuator {
 
 		if ( ! this.spark ) return;
 
-		if ( this.controller.fire > 0 ) {
+		if ( this.controller.fire1 > 0 && this.controller.fire2 === 0 ) {
 
 			this.tempVec3_1.set( 10, 6, 0 );
 			this.object.localToWorld( this.tempVec3_1 );

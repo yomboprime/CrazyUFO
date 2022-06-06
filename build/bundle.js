@@ -48562,6 +48562,7 @@
 		constructor( game ) {
 
 			this.game = game;
+			this.active = false;
 
 		}
 
@@ -48613,6 +48614,7 @@
 		addTo( object ) {
 
 			this.object = object;
+			this.active = true;
 
 			this.game.loadSVG( './spark.svg', {}, ( spark ) => {
 
@@ -48643,7 +48645,7 @@
 
 			if ( ! this.spark ) return;
 
-			if ( this.controller.fire > 0 ) {
+			if ( this.controller.fire1 > 0 && this.controller.fire2 === 0 ) {
 
 				this.tempVec3_1.set( 10, 6, 0 );
 				this.object.localToWorld( this.tempVec3_1 );
@@ -48687,6 +48689,96 @@
 
 	}
 
+	class PlaneActuator extends Actuator {
+
+		constructor( game ) {
+
+			super( game );
+
+			this.object = null;
+			this.controller = null;
+
+			this.maxVelocity = 200;
+
+			this.altitudeLabel = null;
+
+			this.flipPressed = false;
+
+			this.tempBtVec3_1 = new game.Ammo.btVector3( 0, 0, 0 );
+			this.tempVec3_1 = new Vector3();
+			this.tempVec3_2 = new Vector3();
+			this.tempVec3_3 = new Vector3();
+			this.tempVec3_4 = new Vector3();
+
+		}
+
+		addTo( object ) {
+
+			this.object = object;
+			this.active = true;
+
+			this.altitudeLabel = document.createElement( 'span' );
+			this.altitudeLabel.style.position = 'absolute';
+			this.altitudeLabel.style.top = '20px';
+			this.altitudeLabel.style.left = '60px';
+			this.altitudeLabel.style.color = 'white';
+			this.altitudeLabel.innerHTML = "Altitude:";
+			document.body.appendChild( this.altitudeLabel );
+
+		}
+
+		removeFrom( object ) {
+
+			this.object = null;
+
+			document.body.removeChild( this.altitudeLabel );
+
+		}
+
+		actuate( deltaTime ) {
+
+			const prevFlipPressed = this.flipPressed;
+			this.flipPressed = this.controller.y < 0;
+			if ( this.flipPressed && ! prevFlipPressed ) this.object.scale.y *= -1;
+
+			let thrusterControl = Math.max( this.active ? 0.25 : 0, this.controller.y );
+			const velocity = thrusterControl * this.maxVelocity;
+			const thrustForce = 100;
+			this.tempVec3_1.set( velocity, 0, 0 );
+			this.object.localToWorld( this.tempVec3_1 ).sub( this.object.position );
+			this.game.getObjectVelocity( this.object, this.tempVec3_2 );
+			this.tempVec3_1.sub( this.tempVec3_2 );
+			this.tempVec3_1.multiplyScalar( thrustForce * this.object.userData.mass * deltaTime );
+			this.tempBtVec3_1.setValue( this.tempVec3_1.x, this.tempVec3_1.y, 0 );
+			this.object.userData.rigidBody.applyForce( this.tempBtVec3_1 );
+
+			this.game.getObjectAngularVelocity( this.object, this.tempVec3_1 );
+			const angVel = this.tempVec3_1.z;
+			const desiredAngVel = - this.controller.x * 1.2;
+			const torque = ( desiredAngVel - angVel ) * this.object.userData.mass * deltaTime * 15000;
+			this.tempBtVec3_1.setValue( 0, 0, torque );
+			this.object.userData.rigidBody.applyLocalTorque( this.tempBtVec3_1 );
+
+			// Read altitude
+
+			this.tempVec3_1.set( 0, -20, 0 );
+			this.object.localToWorld( this.tempVec3_1 );
+
+			this.tempVec3_2.set( 0, -10000, 0 ).add( this.tempVec3_1 );
+
+			const objectHit = this.game.castPhysicsRay( this.tempVec3_1, this.tempVec3_2, this.tempVec3_3, this.tempVec3_4 );
+
+			if ( objectHit ) {
+
+				const altitude = this.tempVec3_3.sub( this.tempVec3_1 ).length();
+				this.altitudeLabel.innerHTML = "Altitude:" + ( altitude < 2000 ? Math.floor( altitude ) + " m" : "Out Of Range" );
+
+			}
+
+		}
+
+	}
+
 	class UFOActuator extends Actuator {
 
 		constructor( game ) {
@@ -48711,6 +48803,7 @@
 		addTo( object ) {
 
 			this.object = object;
+			this.active = true;
 
 			this.altitudeLabel = document.createElement( 'span' );
 			this.altitudeLabel.style.position = 'absolute';
@@ -48790,6 +48883,7 @@
 		addTo( object ) {
 
 			this.object = object;
+			this.active = true;
 
 		}
 
@@ -48805,7 +48899,7 @@
 
 			if ( this.game.time < this.nextBombTime ) return;
 
-			if ( this.controller.y < 0 ) {
+			if ( this.controller.fire1 === 0 && this.controller.fire2 > 0 ) {
 
 				this.tempVec3_1.set( 0, -15, 0 );
 				this.object.localToWorld( this.tempVec3_1 );
@@ -48839,7 +48933,7 @@
 
 				} );
 
-				this.nextBombTime = this.game.time + 2;
+				this.nextBombTime = this.game.time + 1.1;
 
 			}
 
@@ -48867,6 +48961,7 @@
 		addTo( object ) {
 
 			this.object = object;
+			this.active = true;
 
 		}
 
@@ -48922,6 +49017,7 @@
 		addTo( object ) {
 
 			this.cannon = object;
+			this.active = true;
 
 		}
 
@@ -49012,6 +49108,41 @@
 			this.game = game;
 
 			this.objectsUtils = new ObjectsUtils( game );
+
+		}
+
+		createPlane( position, callback ) {
+
+			const game = this.game;
+
+			this.objectsUtils.createObject( './toyplane.svg', ( plane ) => {
+
+				const planeActuator = new PlaneActuator( game );
+				planeActuator.addTo( plane );
+				planeActuator.controller = game.controller;
+				game.actuators.push( planeActuator );
+
+				const laserActuator = new LaserActuator( game );
+				laserActuator.addTo( plane );
+				laserActuator.controller = game.controller;
+				game.actuators.push( laserActuator );
+
+				const bombActuator = new BombActuator( game );
+				bombActuator.addTo( plane );
+				bombActuator.controller = game.controller;
+				game.actuators.push( bombActuator );
+
+				game.assignDamageTrigger( plane, 1000, () => {
+
+					game.removeDebris( plane );
+					game.explodeObject( plane, 16, 200 );
+					game.playSound( game.sounds.soundExplosion1 );
+
+				} );
+
+				if ( callback ) callback( plane );
+
+			}, position, 10 );
 
 		}
 
@@ -49147,7 +49278,8 @@
 			this.x = 0;
 			this.y = 0;
 
-			this.fire = 0;
+			this.fire1 = 0;
+			this.fire2 = 0;
 
 		}
 
@@ -49202,7 +49334,7 @@
 
 			this.meanUFOSpeed = 0;
 
-			this.ufo = null;
+			this.vehicle = null;
 			this.scenery = null;
 			this.spark = null;
 
@@ -49260,15 +49392,15 @@
 			const objectsCreator = new ObjectsCreator( this );
 			new ObjectsUtils( this );
 
-			objectsCreator.createUFO( new Vector3( -200, 650, 0 ), ( ufo ) => {
-			//objectsCreator.createUFO( new Vector3( -540, 750, 0 ), ( ufo ) => {
-			//objectsCreator.createUFO( new Vector3( 0, 750, 0 ), ( ufo ) => {
-			//objectsCreator.createUFO( new Vector3( 550, 550, 0 ), ( ufo ) => {
-			//objectsCreator.createUFO( new Vector3( 1200, 950, 0 ), ( ufo ) => {
+			const urlParams = new URLSearchParams( window.location.search );
+			const vehicleFunc = urlParams.get( 'plane' ) ? 'createPlane' : 'createUFO';
+			//objectsCreator.createUFO( new Vector3( -540, 750, 0 ), ( vehicle ) => {
+			//objectsCreator.createPlane( new Vector3( -540, 750, 0 ), ( vehicle ) => {
+			objectsCreator[ vehicleFunc ]( new Vector3( -750, 750, 0 ), ( vehicle ) => {
 
-				scope.ufo = ufo;
+				scope.vehicle = vehicle;
 
-				scope.addCollisionTrigger( ufo, bar, ( objectsToRemove ) => {
+				scope.addCollisionTrigger( vehicle, bar, ( objectsToRemove ) => {
 
 					scope.makeDamage( bar, 10000 );
 
@@ -49277,30 +49409,29 @@
 				objectsCreator.createDepositAndStructure( new Vector3( -400, 655, 0 ) );
 				objectsCreator.createDepositAndStructure( new Vector3( -450, 655, 0 ) );
 
-				objectsCreator.createCannon( new Vector3( -295, 560, 0 ), ufo );
+				objectsCreator.createCannon( new Vector3( -295, 560, 0 ), vehicle );
 				objectsCreator.createDepositAndStructure( new Vector3( -350, 550, 0 ) );
 
-				objectsCreator.createCannon( new Vector3( 240, 620, 0 ), ufo );
-				objectsCreator.createCannon( new Vector3( 280, 620, 0 ), ufo );
+				objectsCreator.createCannon( new Vector3( 240, 620, 0 ), vehicle );
+				objectsCreator.createCannon( new Vector3( 280, 620, 0 ), vehicle );
 				objectsCreator.createDepositAndStructure( new Vector3( 326, 620, 0 ) );
 
-				objectsCreator.createCannon( new Vector3( 600, 530, 0 ), ufo );
-				objectsCreator.createCannon( new Vector3( 650, 530, 0 ), ufo );
+				objectsCreator.createCannon( new Vector3( 600, 530, 0 ), vehicle );
+				objectsCreator.createCannon( new Vector3( 650, 530, 0 ), vehicle );
 
-				objectsCreator.createCannon( new Vector3( 700, 510, 0 ), ufo );
-				objectsCreator.createCannon( new Vector3( 750, 470, 0 ), ufo );
+				objectsCreator.createCannon( new Vector3( 700, 510, 0 ), vehicle );
+				objectsCreator.createCannon( new Vector3( 750, 470, 0 ), vehicle );
 
 				objectsCreator.createDepositAndStructure( new Vector3( 820, 300, 0 ) );
 				objectsCreator.createDepositAndStructure( new Vector3( 860, 300, 0 ) );
 				objectsCreator.createDepositAndStructure( new Vector3( 900, 300, 0 ) );
 
-				objectsCreator.createCannon( new Vector3( 1200, 865, 0 ), ufo );
-				objectsCreator.createCannon( new Vector3( 1280, 865, 0 ), ufo );
-				objectsCreator.createCannon( new Vector3( 1360, 865, 0 ), ufo );
+				objectsCreator.createCannon( new Vector3( 1200, 865, 0 ), vehicle );
+				objectsCreator.createCannon( new Vector3( 1280, 865, 0 ), vehicle );
+				objectsCreator.createCannon( new Vector3( 1360, 865, 0 ), vehicle );
 
 				objectsCreator.createDepositAndStructure( new Vector3( 1450, 860, 0 ) );
 				objectsCreator.createDepositAndStructure( new Vector3( 1500, 840, 0 ) );
-
 			} );
 
 			this.loadSVG( './scenery1.svg', {}, ( scenery ) => {
@@ -49498,6 +49629,13 @@
 			const v = object.userData.rigidBody.getLinearVelocity();
 			result.set( v.x(), v.y(), v.z() );
 		}
+
+		getObjectAngularVelocity( object, result ) {
+
+			const v = object.userData.rigidBody.getAngularVelocity();
+			result.set( v.x(), v.y(), v.z() );
+
+		}
 
 		playSound( sound ) {
 
@@ -49929,12 +50067,12 @@
 
 			}
 
-			if ( this.ufo ) {
+			if ( this.vehicle ) {
 
-				this.camera.position.x = this.ufo.position.x;
-				this.camera.position.y = this.ufo.position.y;
+				this.camera.position.x = this.vehicle.position.x;
+				this.camera.position.y = this.vehicle.position.y;
 
-				//const speed = this.ufo.userData.rigidBody.getLinearVelocity().length();
+				//const speed = this.vehicle.userData.rigidBody.getLinearVelocity().length();
 				//this.meanUFOSpeed = this.meanUFOSpeed * 0.99 + speed * 0.01;
 
 	//			if ( this.meanUFOSpeed > 0 ) this.camera.zoom = Math.max( 0.5, Math.min( 1, 1 / this.meanUFOSpeed ) );
@@ -50126,7 +50264,11 @@
 							break;
 
 						case 'Space':
-							game.controller.fire = 1;
+							game.controller.fire1 = 1;
+							break;
+
+						case 'KeyM':
+							game.controller.fire2 = 1;
 							break;
 
 					}
@@ -50154,7 +50296,11 @@
 							break;
 
 						case 'Space':
-							game.controller.fire = 0;
+							game.controller.fire1 = 0;
+							break;
+
+						case 'KeyM':
+							game.controller.fire2 = 0;
 							break;
 
 					}

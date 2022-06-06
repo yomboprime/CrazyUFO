@@ -37,6 +37,7 @@ class BombActuator extends Actuator {
 	addTo( object ) {
 
 		this.object = object;
+		this.active = true;
 
 	}
 
@@ -52,7 +53,7 @@ class BombActuator extends Actuator {
 
 		if ( this.game.time < this.nextBombTime ) return;
 
-		if ( this.controller.y < 0 ) {
+		if ( this.controller.fire1 === 0 && this.controller.fire2 > 0 ) {
 
 			this.tempVec3_1.set( 0, -15, 0 );
 			this.object.localToWorld( this.tempVec3_1 );
@@ -86,7 +87,7 @@ class BombActuator extends Actuator {
 
 			} );
 
-			this.nextBombTime = this.game.time + 2;
+			this.nextBombTime = this.game.time + 1.1;
 
 		}
 

@@ -15,6 +15,7 @@ class TimerActuator extends Actuator {
 	addTo( object ) {
 
 		this.object = object;
+		this.active = true;
 
 	}
 

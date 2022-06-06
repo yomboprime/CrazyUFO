@@ -37,6 +37,7 @@ class TurretActuator extends Actuator {
 	addTo( object ) {
 
 		this.cannon = object;
+		this.active = true;
 
 	}
 

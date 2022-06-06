@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg8"
+   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
+   sodipodi:docname="toyplane_propeller.svg">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="2.8284271"
+     inkscape:cx="76.494795"
+     inkscape:cy="1152.4862"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1920"
+     inkscape:window-height="1007"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:snap-global="false" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Capa 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       inkscape:connector-curvature="0"
+       id="path864"
+       d="m -108.96297,-3.064892 c 0.0646,-0.07142 0.62321,-0.277711 1.01947,-0.376485 0.17616,-0.04391 0.59055,-0.13538 0.92086,-0.20326 0.87827,-0.180492 1.13324,-0.243635 1.40294,-0.347445 0.27904,-0.107402 0.43023,-0.198075 0.6938,-0.416099 0.2132,-0.17635 0.34883,-0.234134 0.5991,-0.255242 0.33008,-0.02784 0.75179,0.109785 0.94238,0.307547 0.17538,0.181966 0.3922,0.672707 0.3922,0.887661 0,0.06867 -0.009,0.07726 -0.0831,0.07726 -0.0457,0 -0.94953,0.05404 -2.00854,0.120095 -2.76653,0.172555 -3.55755,0.223666 -3.75384,0.24255 -0.1721,0.01656 -0.17311,0.01626 -0.1253,-0.03659 z"
+       style="fill:#a15e49;stroke-width:0.99999994" />
+    <path
+       style="fill:#ff4525;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m -0.02474524,-1.4064266 1.12253134,0.1637026 0.5378797,0.2104747 0.5144937,0.30401909 0.327405,0.37417734 0.09354,0.28063299 -0.07016,0.35079124 L 2.2670895,0.62816263 1.8695268,0.90879561 1.4251911,1.0958843 0.79376743,1.282973 -0.00135924,1.329745 Z"
+       id="path906"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:#ff9b25;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 0.67683743,-1.3362684 v -5.7763625 l 0.09354,-0.4209495 0.11693,-0.023386 0.09355,0.257247 0.07016,0.5846521 0.02339,5.4255713 z"
+       id="path908"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:#ff9b25;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 0.60667843,1.282973 -0.23385967,4.0925644 -0.02339,1.6136398 0.07016,0.5144939 0.16370267,0.6080381 0.163702,0.280633 0.187089,0.046772 0.16370267,-0.023386 0.140316,-0.3040192 0.116931,-0.7483546 0.07016,-1.6136398 -0.350791,-4.5602862 z"
+       id="path910"
+       inkscape:connector-curvature="0" />
+  </g>
+</svg>

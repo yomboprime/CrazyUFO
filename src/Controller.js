@@ -6,7 +6,8 @@ class Controller {
 		this.x = 0;
 		this.y = 0;
 
-		this.fire = 0;
+		this.fire1 = 0;
+		this.fire2 = 0;
 
 	}
 

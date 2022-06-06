@@ -4,6 +4,7 @@ class Actuator {
 	constructor( game ) {
 
 		this.game = game;
+		this.active = false;
 
 	}
 

@@ -6,7 +6,7 @@ import {
 
 import { Actuator } from '../Actuator.js';
 
-class UFOActuator extends Actuator {
+class PlaneActuator extends Actuator {
 
 	constructor( game ) {
 
@@ -15,9 +15,11 @@ class UFOActuator extends Actuator {
 		this.object = null;
 		this.controller = null;
 
-		this.thrusterForce = 300;
+		this.maxVelocity = 200;
 
 		this.altitudeLabel = null;
+
+		this.flipPressed = false;
 
 		this.tempBtVec3_1 = new game.Ammo.btVector3( 0, 0, 0 );
 		this.tempVec3_1 = new Vector3();
@@ -52,16 +54,27 @@ class UFOActuator extends Actuator {
 
 	actuate( deltaTime ) {
 
-		let thrusterControl = Math.max( 0, this.controller.y );
-		const userTorque = - this.controller.x * this.object.userData.mass * 280;
+		const prevFlipPressed = this.flipPressed;
+		this.flipPressed = this.controller.y < 0;
+		if ( this.flipPressed && ! prevFlipPressed ) this.object.scale.y *= -1;
 
-		this.tempBtVec3_1.setValue( 0, thrusterControl * this.thrusterForce, 0 );
-		this.object.userData.rigidBody.applyCentralLocalForce( this.tempBtVec3_1 );
+		let thrusterControl = Math.max( this.active ? 0.25 : 0, this.controller.y );
+		const velocity = thrusterControl * this.maxVelocity;
+		const thrustForce = 100;
+		this.tempVec3_1.set( velocity, 0, 0 );
+		this.object.localToWorld( this.tempVec3_1 ).sub( this.object.position );
+		this.game.getObjectVelocity( this.object, this.tempVec3_2 );
+		this.tempVec3_1.sub( this.tempVec3_2 );
+		this.tempVec3_1.multiplyScalar( thrustForce * this.object.userData.mass * deltaTime );
+		this.tempBtVec3_1.setValue( this.tempVec3_1.x, this.tempVec3_1.y, 0 );
+		this.object.userData.rigidBody.applyForce( this.tempBtVec3_1 );
 
-		const autoTorque = 0;//- this.object.rotation.z * 50 * this.object.userData.mass;
-		const torque = autoTorque + userTorque;
+		this.game.getObjectAngularVelocity( this.object, this.tempVec3_1 );
+		const angVel = this.tempVec3_1.z;
+		const desiredAngVel = - this.controller.x * 1.2;
+		const torque = ( desiredAngVel - angVel ) * this.object.userData.mass * deltaTime * 15000;
 		this.tempBtVec3_1.setValue( 0, 0, torque );
-		this.object.userData.rigidBody.applyTorque( this.tempBtVec3_1 );
+		this.object.userData.rigidBody.applyLocalTorque( this.tempBtVec3_1 );
 
 		// Read altitude
 
@@ -83,4 +96,4 @@ class UFOActuator extends Actuator {
 
 }
 
-export { UFOActuator };
+export { PlaneActuator };

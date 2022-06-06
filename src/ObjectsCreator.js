@@ -4,6 +4,7 @@ import {
 
 import { ObjectsUtils } from './ObjectsUtils.js';
 import { LaserActuator } from './actuators/LaserActuator.js';
+import { PlaneActuator } from './actuators/PlaneActuator.js';
 import { UFOActuator } from './actuators/UFOActuator.js';
 import { BombActuator } from './actuators/BombActuator.js';
 import { TurretActuator } from './actuators/TurretActuator.js';
@@ -15,6 +16,43 @@ class ObjectsCreator {
 		this.game = game;
 
 		this.objectsUtils = new ObjectsUtils( game );
+
+	}
+
+	createPlane( position, callback ) {
+
+		const scope = this;
+
+		const game = this.game;
+
+		this.objectsUtils.createObject( './toyplane.svg', ( plane ) => {
+
+			const planeActuator = new PlaneActuator( game );
+			planeActuator.addTo( plane );
+			planeActuator.controller = game.controller;
+			game.actuators.push( planeActuator );
+
+			const laserActuator = new LaserActuator( game );
+			laserActuator.addTo( plane );
+			laserActuator.controller = game.controller;
+			game.actuators.push( laserActuator );
+
+			const bombActuator = new BombActuator( game );
+			bombActuator.addTo( plane );
+			bombActuator.controller = game.controller;
+			game.actuators.push( bombActuator );
+
+			game.assignDamageTrigger( plane, 1000, () => {
+
+				game.removeDebris( plane );
+				game.explodeObject( plane, 16, 200 );
+				game.playSound( game.sounds.soundExplosion1 );
+
+			} );
+
+			if ( callback ) callback( plane );
+
+		}, position, 10 );
 
 	}
 

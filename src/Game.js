@@ -83,7 +83,7 @@ class Game {
 
 		this.meanUFOSpeed = 0;
 
-		this.ufo = null;
+		this.vehicle = null;
 		this.scenery = null;
 		this.spark = null;
 
@@ -141,15 +141,15 @@ class Game {
 		const objectsCreator = new ObjectsCreator( this );
 		const objectsUtils = new ObjectsUtils( this );
 
-		objectsCreator.createUFO( new Vector3( -200, 650, 0 ), ( ufo ) => {
-		//objectsCreator.createUFO( new Vector3( -540, 750, 0 ), ( ufo ) => {
-		//objectsCreator.createUFO( new Vector3( 0, 750, 0 ), ( ufo ) => {
-		//objectsCreator.createUFO( new Vector3( 550, 550, 0 ), ( ufo ) => {
-		//objectsCreator.createUFO( new Vector3( 1200, 950, 0 ), ( ufo ) => {
+		const urlParams = new URLSearchParams( window.location.search );
+		const vehicleFunc = urlParams.get( 'plane' ) ? 'createPlane' : 'createUFO';
+		//objectsCreator.createUFO( new Vector3( -540, 750, 0 ), ( vehicle ) => {
+		//objectsCreator.createPlane( new Vector3( -540, 750, 0 ), ( vehicle ) => {
+		objectsCreator[ vehicleFunc ]( new Vector3( -750, 750, 0 ), ( vehicle ) => {
 
-			scope.ufo = ufo;
+			scope.vehicle = vehicle;
 
-			scope.addCollisionTrigger( ufo, bar, ( objectsToRemove ) => {
+			scope.addCollisionTrigger( vehicle, bar, ( objectsToRemove ) => {
 
 				scope.makeDamage( bar, 10000 );
 
@@ -158,30 +158,29 @@ class Game {
 			objectsCreator.createDepositAndStructure( new Vector3( -400, 655, 0 ) );
 			objectsCreator.createDepositAndStructure( new Vector3( -450, 655, 0 ) );
 
-			objectsCreator.createCannon( new Vector3( -295, 560, 0 ), ufo );
+			objectsCreator.createCannon( new Vector3( -295, 560, 0 ), vehicle );
 			objectsCreator.createDepositAndStructure( new Vector3( -350, 550, 0 ) );
 
-			objectsCreator.createCannon( new Vector3( 240, 620, 0 ), ufo );
-			objectsCreator.createCannon( new Vector3( 280, 620, 0 ), ufo );
+			objectsCreator.createCannon( new Vector3( 240, 620, 0 ), vehicle );
+			objectsCreator.createCannon( new Vector3( 280, 620, 0 ), vehicle );
 			objectsCreator.createDepositAndStructure( new Vector3( 326, 620, 0 ) );
 
-			objectsCreator.createCannon( new Vector3( 600, 530, 0 ), ufo );
-			objectsCreator.createCannon( new Vector3( 650, 530, 0 ), ufo );
+			objectsCreator.createCannon( new Vector3( 600, 530, 0 ), vehicle );
+			objectsCreator.createCannon( new Vector3( 650, 530, 0 ), vehicle );
 
-			objectsCreator.createCannon( new Vector3( 700, 510, 0 ), ufo );
-			objectsCreator.createCannon( new Vector3( 750, 470, 0 ), ufo );
+			objectsCreator.createCannon( new Vector3( 700, 510, 0 ), vehicle );
+			objectsCreator.createCannon( new Vector3( 750, 470, 0 ), vehicle );
 
 			objectsCreator.createDepositAndStructure( new Vector3( 820, 300, 0 ) );
 			objectsCreator.createDepositAndStructure( new Vector3( 860, 300, 0 ) );
 			objectsCreator.createDepositAndStructure( new Vector3( 900, 300, 0 ) );
 
-			objectsCreator.createCannon( new Vector3( 1200, 865, 0 ), ufo );
-			objectsCreator.createCannon( new Vector3( 1280, 865, 0 ), ufo );
-			objectsCreator.createCannon( new Vector3( 1360, 865, 0 ), ufo );
+			objectsCreator.createCannon( new Vector3( 1200, 865, 0 ), vehicle );
+			objectsCreator.createCannon( new Vector3( 1280, 865, 0 ), vehicle );
+			objectsCreator.createCannon( new Vector3( 1360, 865, 0 ), vehicle );
 
 			objectsCreator.createDepositAndStructure( new Vector3( 1450, 860, 0 ) );
 			objectsCreator.createDepositAndStructure( new Vector3( 1500, 840, 0 ) );
-
 		} );
 
 		this.loadSVG( './scenery1.svg', {}, ( scenery ) => {
@@ -386,6 +385,13 @@ class Game {
 		const v = object.userData.rigidBody.getLinearVelocity();
 		result.set( v.x(), v.y(), v.z() );
 	}
+
+	getObjectAngularVelocity( object, result ) {
+
+		const v = object.userData.rigidBody.getAngularVelocity();
+		result.set( v.x(), v.y(), v.z() );
+
+	}
 
 	playSound( sound ) {
 
@@ -817,12 +823,12 @@ class Game {
 
 		}
 
-		if ( this.ufo ) {
+		if ( this.vehicle ) {
 
-			this.camera.position.x = this.ufo.position.x;
-			this.camera.position.y = this.ufo.position.y;
+			this.camera.position.x = this.vehicle.position.x;
+			this.camera.position.y = this.vehicle.position.y;
 
-			//const speed = this.ufo.userData.rigidBody.getLinearVelocity().length();
+			//const speed = this.vehicle.userData.rigidBody.getLinearVelocity().length();
 			//this.meanUFOSpeed = this.meanUFOSpeed * 0.99 + speed * 0.01;
 
 //			if ( this.meanUFOSpeed > 0 ) this.camera.zoom = Math.max( 0.5, Math.min( 1, 1 / this.meanUFOSpeed ) );

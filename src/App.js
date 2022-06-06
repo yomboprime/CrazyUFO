@@ -82,7 +82,11 @@ class App {
 						break;
 
 					case 'Space':
-						game.controller.fire = 1;
+						game.controller.fire1 = 1;
+						break;
+
+					case 'KeyM':
+						game.controller.fire2 = 1;
 						break;
 
 				}
@@ -110,7 +114,11 @@ class App {
 						break;
 
 					case 'Space':
-						game.controller.fire = 0;
+						game.controller.fire1 = 0;
+						break;
+
+					case 'KeyM':
+						game.controller.fire2 = 0;
 						break;
 
 				}
