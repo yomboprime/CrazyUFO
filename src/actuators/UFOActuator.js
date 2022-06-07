@@ -5,15 +5,13 @@ import {
 
 
 import { Actuator } from '../Actuator.js';
+import { VehicleActuator } from './VehicleActuator.js';
 
-class UFOActuator extends Actuator {
+class UFOActuator extends VehicleActuator {
 
 	constructor( game ) {
 
 		super( game );
-
-		this.object = null;
-		this.controller = null;
 
 		this.thrusterForce = 300;
 
@@ -29,8 +27,7 @@ class UFOActuator extends Actuator {
 
 	addTo( object ) {
 
-		this.object = object;
-		this.active = true;
+		super.addTo( object );
 
 		this.altitudeLabel = document.createElement( 'span' );
 		this.altitudeLabel.style.position = 'absolute';
@@ -44,13 +41,15 @@ class UFOActuator extends Actuator {
 
 	removeFrom( object ) {
 
-		this.object = null;
+		super.removeFrom( object );
 
 		document.body.removeChild( this.altitudeLabel );
 
 	}
 
 	actuate( deltaTime ) {
+
+		if ( ! this.active ) return;
 
 		let thrusterControl = Math.max( 0, this.controller.y );
 		const userTorque = - this.controller.x * this.object.userData.mass * 280;

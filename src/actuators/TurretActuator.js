@@ -12,8 +12,7 @@ class TurretActuator extends Actuator {
 
 		super( game );
 
-		this.cannon = null;
-		this.target = null;
+		this.active = true;
 
 		this.bullet = null;
 
@@ -34,47 +33,37 @@ class TurretActuator extends Actuator {
 
 	}
 
-	addTo( object ) {
-
-		this.cannon = object;
-		this.active = true;
-
-	}
-
-	removeFrom( object ) {
-
-		this.cannon = null;
-
-	}
-
 	actuate( deltaTime ) {
 
-		if ( this.cannon.userData.destroyed ) {
+		if ( this.object.userData.destroyed ) {
 
 			this.isAlreadyDestroyed = true;
 			return;
 
 		}
 
-		this.tempVec3_1.copy( this.target.position ).sub( this.cannon.position );
+		const target = this.game.vehicle;
+		if ( ! target ) return;
+
+		this.tempVec3_1.copy( target.position ).sub( this.object.position );
 		let angle = Math.atan( this.tempVec3_1.y / this.tempVec3_1.x );
 		if ( this.tempVec3_1.x < 0 ) angle += Math.PI;
-		this.cannon.userData.hinge.setMotorTarget( angle, deltaTime );
+		this.object.userData.hinge.setMotorTarget( angle, deltaTime );
 
 		if ( this.bullet && this.timeNextShot < this.game.time ) {
 
-			this.tempVec3_2.setFromMatrixColumn( this.cannon.matrixWorld, 0 ).multiplyScalar( 20 ).add( this.cannon.position );
-			this.tempVec3_3.setFromMatrixColumn( this.cannon.matrixWorld, 0 ).multiplyScalar( 1000 ).add( this.cannon.position );
+			this.tempVec3_2.setFromMatrixColumn( this.object.matrixWorld, 0 ).multiplyScalar( 20 ).add( this.object.position );
+			this.tempVec3_3.setFromMatrixColumn( this.object.matrixWorld, 0 ).multiplyScalar( 1000 ).add( this.object.position );
 
 			const objectHit = this.game.castPhysicsRay( this.tempVec3_2, this.tempVec3_3 );
 
-			if ( objectHit === this.target ) {
+			if ( objectHit === target ) {
 
 				const bullet = this.bullet.clone();
 				bullet.position.set( 35, 0, 0 );
-				this.cannon.localToWorld( bullet.position );
+				this.object.localToWorld( bullet.position );
 
-				this.tempVec3_4.setFromMatrixColumn( this.cannon.matrixWorld, 0 ).multiplyScalar( 80 );
+				this.tempVec3_4.setFromMatrixColumn( this.object.matrixWorld, 0 ).multiplyScalar( 80 );
 				bullet.userData.velocity = new Vector3().copy( this.tempVec3_4 );
 
 				bullet.userData.mass = 1.5;

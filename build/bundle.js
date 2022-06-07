@@ -48563,17 +48563,29 @@
 
 			this.game = game;
 			this.active = false;
+			this.object = null;
 
 		}
 
 		addTo( object ) {
 
-			// Nothing to do
+			if ( ! object.userData.actuators ) {
+
+				object.userData.actuators = [];
+
+			}
+
+			object.userData.actuators.push( this );
+
+			this.object = object;
 		}
 
 		removeFrom( object ) {
 
-			// Nothing to do
+			const i = object.userData.actuators.indexOf( this );
+			if ( i >= 0 ) object.userData.actuators.splice( i, 1 );
+
+			this.object = null;
 
 		}
 
@@ -48597,7 +48609,6 @@
 
 			super( game );
 
-			this.object = null;
 			this.controller = null;
 
 			this.spark = null;
@@ -48613,8 +48624,7 @@
 
 		addTo( object ) {
 
-			this.object = object;
-			this.active = true;
+			super.addTo( object );
 
 			this.game.loadSVG( './spark.svg', {}, ( spark ) => {
 
@@ -48635,6 +48645,8 @@
 
 		removeFrom( object ) {
 
+			super.removeFrom( object );
+
 			this.game.scene.remove( this.spark );
 			this.game.scene.remove( this.laser );
 			this.object = null;
@@ -48644,6 +48656,8 @@
 		actuate( deltaTime ) {
 
 			if ( ! this.spark ) return;
+
+			if ( ! this.active ) return;
 
 			if ( this.controller.fire1 > 0 && this.controller.fire2 === 0 ) {
 
@@ -48689,14 +48703,55 @@
 
 	}
 
-	class PlaneActuator extends Actuator {
+	class VehicleActuator extends Actuator {
 
 		constructor( game ) {
 
 			super( game );
 
-			this.object = null;
 			this.controller = null;
+
+		}
+
+		addTo( object ) {
+
+			super.addTo( object );
+
+			this.object.isVehicle = true;
+			this.object.userData.vehicleActuator = this;
+
+			const scope = this;
+			let enterExitPressedPrevious = undefined;
+			this.game.addCollisionTrigger( this.game.player, this.object, ( objectsToRemove ) => {
+
+				const enterExitPressed = scope.controller.fire1 > 0 && scope.controller.fire2 > 0;
+				if ( ! scope.object.userData.occupied && enterExitPressed && enterExitPressedPrevious === false ) {
+
+					scope.game.enterVehicle( scope.game.player, scope.object, objectsToRemove );
+
+				}
+
+				enterExitPressedPrevious = enterExitPressed;
+
+			} );
+
+		}
+
+		removeFrom( object ) {
+
+			super.removeFrom( object );
+
+			this.game.removeCollisionTrigger( this.game.player, object );
+
+		}
+
+	}
+
+	class PlaneActuator extends VehicleActuator {
+
+		constructor( game ) {
+
+			super( game );
 
 			this.maxVelocity = 200;
 
@@ -48714,8 +48769,7 @@
 
 		addTo( object ) {
 
-			this.object = object;
-			this.active = true;
+			super.addTo( object );
 
 			this.altitudeLabel = document.createElement( 'span' );
 			this.altitudeLabel.style.position = 'absolute';
@@ -48729,7 +48783,7 @@
 
 		removeFrom( object ) {
 
-			this.object = null;
+			super.removeFrom( object );
 
 			document.body.removeChild( this.altitudeLabel );
 
@@ -48737,11 +48791,13 @@
 
 		actuate( deltaTime ) {
 
+			if ( ! this.active ) return;
+
 			const prevFlipPressed = this.flipPressed;
-			this.flipPressed = this.controller.y < 0;
+			this.flipPressed = this.controller.y < - 0.5;
 			if ( this.flipPressed && ! prevFlipPressed ) this.object.scale.y *= -1;
 
-			let thrusterControl = Math.max( this.active ? 0.25 : 0, this.controller.y );
+			let thrusterControl = Math.max( 0.25, this.controller.y );
 			const velocity = thrusterControl * this.maxVelocity;
 			const thrustForce = 100;
 			this.tempVec3_1.set( velocity, 0, 0 );
@@ -48771,7 +48827,8 @@
 			if ( objectHit ) {
 
 				const altitude = this.tempVec3_3.sub( this.tempVec3_1 ).length();
-				this.altitudeLabel.innerHTML = "Altitude:" + ( altitude < 2000 ? Math.floor( altitude ) + " m" : "Out Of Range" );
+				this.altitudeLabel.innerHTML = "Altitude:" + ( altitude < 2000 ? Math.floor( altitude ) + " m" : "Out Of Range" )
+					;//+ " X: " + this.object.position.x.toFixed( 2 ) + "Y: " + this.object.position.y.toFixed( 2 );
 
 			}
 
@@ -48779,14 +48836,11 @@
 
 	}
 
-	class UFOActuator extends Actuator {
+	class UFOActuator extends VehicleActuator {
 
 		constructor( game ) {
 
 			super( game );
-
-			this.object = null;
-			this.controller = null;
 
 			this.thrusterForce = 300;
 
@@ -48802,8 +48856,7 @@
 
 		addTo( object ) {
 
-			this.object = object;
-			this.active = true;
+			super.addTo( object );
 
 			this.altitudeLabel = document.createElement( 'span' );
 			this.altitudeLabel.style.position = 'absolute';
@@ -48817,13 +48870,15 @@
 
 		removeFrom( object ) {
 
-			this.object = null;
+			super.removeFrom( object );
 
 			document.body.removeChild( this.altitudeLabel );
 
 		}
 
 		actuate( deltaTime ) {
+
+			if ( ! this.active ) return;
 
 			let thrusterControl = Math.max( 0, this.controller.y );
 			const userTorque = - this.controller.x * this.object.userData.mass * 280;
@@ -48862,7 +48917,6 @@
 
 			super( game );
 
-			this.object = null;
 			this.controller = null;
 
 			this.game.loadSVG( './bomb.svg', {}, ( bomb ) => {
@@ -48880,22 +48934,11 @@
 
 		}
 
-		addTo( object ) {
-
-			this.object = object;
-			this.active = true;
-
-		}
-
-		removeFrom( object ) {
-
-			this.object = null;
-
-		}
-
 		actuate( deltaTime ) {
 
 			if ( ! this.bomb ) return;
+
+			if ( ! this.active ) return;
 
 			if ( this.game.time < this.nextBombTime ) return;
 
@@ -48958,19 +49001,6 @@
 
 		}
 
-		addTo( object ) {
-
-			this.object = object;
-			this.active = true;
-
-		}
-
-		removeFrom( object ) {
-
-			this.object = null;
-
-		}
-
 		actuate( deltaTime ) {
 
 			this.isExpirated = this.expiration < this.game.time;
@@ -48992,8 +49022,7 @@
 
 			super( game );
 
-			this.cannon = null;
-			this.target = null;
+			this.active = true;
 
 			this.bullet = null;
 
@@ -49014,47 +49043,37 @@
 
 		}
 
-		addTo( object ) {
-
-			this.cannon = object;
-			this.active = true;
-
-		}
-
-		removeFrom( object ) {
-
-			this.cannon = null;
-
-		}
-
 		actuate( deltaTime ) {
 
-			if ( this.cannon.userData.destroyed ) {
+			if ( this.object.userData.destroyed ) {
 
 				this.isAlreadyDestroyed = true;
 				return;
 
 			}
 
-			this.tempVec3_1.copy( this.target.position ).sub( this.cannon.position );
+			const target = this.game.vehicle;
+			if ( ! target ) return;
+
+			this.tempVec3_1.copy( target.position ).sub( this.object.position );
 			let angle = Math.atan( this.tempVec3_1.y / this.tempVec3_1.x );
 			if ( this.tempVec3_1.x < 0 ) angle += Math.PI;
-			this.cannon.userData.hinge.setMotorTarget( angle, deltaTime );
+			this.object.userData.hinge.setMotorTarget( angle, deltaTime );
 
 			if ( this.bullet && this.timeNextShot < this.game.time ) {
 
-				this.tempVec3_2.setFromMatrixColumn( this.cannon.matrixWorld, 0 ).multiplyScalar( 20 ).add( this.cannon.position );
-				this.tempVec3_3.setFromMatrixColumn( this.cannon.matrixWorld, 0 ).multiplyScalar( 1000 ).add( this.cannon.position );
+				this.tempVec3_2.setFromMatrixColumn( this.object.matrixWorld, 0 ).multiplyScalar( 20 ).add( this.object.position );
+				this.tempVec3_3.setFromMatrixColumn( this.object.matrixWorld, 0 ).multiplyScalar( 1000 ).add( this.object.position );
 
 				const objectHit = this.game.castPhysicsRay( this.tempVec3_2, this.tempVec3_3 );
 
-				if ( objectHit === this.target ) {
+				if ( objectHit === target ) {
 
 					const bullet = this.bullet.clone();
 					bullet.position.set( 35, 0, 0 );
-					this.cannon.localToWorld( bullet.position );
+					this.object.localToWorld( bullet.position );
 
-					this.tempVec3_4.setFromMatrixColumn( this.cannon.matrixWorld, 0 ).multiplyScalar( 80 );
+					this.tempVec3_4.setFromMatrixColumn( this.object.matrixWorld, 0 ).multiplyScalar( 80 );
 					bullet.userData.velocity = new Vector3().copy( this.tempVec3_4 );
 
 					bullet.userData.mass = 1.5;
@@ -49101,13 +49120,109 @@
 
 	}
 
+	class HumanActuator extends Actuator {
+
+		constructor( game ) {
+
+			super( game );
+
+			this.controller = null;
+
+			this.timeBetweenJumps = 0.5;
+			this.timeNextJump = game.time;
+
+			this.tempBtVec3_1 = new game.Ammo.btVector3( 0, 0, 0 );
+			this.tempVec3_1 = new Vector3();
+			this.tempVec3_2 = new Vector3();
+			this.tempVec3_3 = new Vector3();
+			this.tempVec3_4 = new Vector3();
+
+		}
+
+		addTo( object ) {
+
+			super.addTo( object );
+
+			this.active = true;
+
+			this.tempBtVec3_1.setValue( 0, 0, 0 );
+			object.userData.rigidBody.setAngularFactor( this.tempBtVec3_1 );
+
+		}
+
+		removeFrom( object ) {
+
+			super.removeFrom( object );
+
+			this.active = false;
+
+		}
+
+		actuate( deltaTime ) {
+
+			if ( this.object.userData.collided ) {
+
+				this.object.userData.collided = false;
+
+				if ( this.controller.y > 0.5 && this.timeNextJump <= this.game.time ) {
+
+					this.tempVec3_1.set( this.controller.x, 1, 0 ).normalize();
+					this.tempVec3_1.multiplyScalar( 20 * this.object.userData.mass );
+					this.tempBtVec3_1.setValue( this.tempVec3_1.x, this.tempVec3_1.y, 0 );
+					this.object.userData.rigidBody.applyCentralImpulse( this.tempBtVec3_1 );
+
+					this.timeNextJump = this.game.time + this.timeBetweenJumps;
+
+				}
+			}
+
+		}
+
+	}
+
 	class ObjectsCreator {
 
 		constructor( game ) {
 
 			this.game = game;
 
+			this.tempBtVec3_1 = new game.Ammo.btVector3( 0, 0, 0 );
+
 			this.objectsUtils = new ObjectsUtils( game );
+
+		}
+
+		createHuman( position, callback ) {
+
+			const game = this.game;
+
+			this.game.loadSVG( './human.svg', {}, ( human ) => {
+
+				game.player = human;
+				game.vehicle = human;
+
+				human.position.copy( position );
+				human.userData.mass = 3;
+
+				let shape = new game.Ammo.btCapsuleShape( 2, 5 );
+				shape.setMargin( game.margin );
+
+				game.createRigidBody( human, shape, human.userData.mass, human.position, human.quaternion, human.userData.velocity );
+
+				const humanActuator = new HumanActuator( game );
+				humanActuator.addTo( human );
+				humanActuator.controller = game.controller;
+				game.actuators.push( humanActuator );
+
+				game.assignDamageTrigger( human, 150, () => {
+
+					game.removeDebris( human );
+
+				} );
+
+				if ( callback ) callback( human );
+
+			} );
 
 		}
 
@@ -49116,6 +49231,8 @@
 			const game = this.game;
 
 			this.objectsUtils.createObject( './toyplane.svg', ( plane ) => {
+
+				game.vehicles.push( plane );
 
 				const planeActuator = new PlaneActuator( game );
 				planeActuator.addTo( plane );
@@ -49151,6 +49268,8 @@
 			const game = this.game;
 
 			this.objectsUtils.createObject( './ufo.svg', ( ufo ) => {
+
+				game.vehicles.push( ufo );
 
 				const ufoActuator = new UFOActuator( game );
 				ufoActuator.addTo( ufo );
@@ -49213,7 +49332,7 @@
 
 		}
 
-		createCannon( position, target, callback ) {
+		createCannon( position, callback ) {
 
 			const scope = this;
 
@@ -49256,7 +49375,6 @@
 
 						const turretActuator = new TurretActuator( game );
 						turretActuator.addTo( cannon );
-						turretActuator.target = target;
 						game.actuators.push( turretActuator );
 
 						if ( callback ) callback();
@@ -49322,6 +49440,7 @@
 			this.initPhysics();
 
 			this.actuators = [];
+			this.vehicles = [];
 			this.controller = new Controller();
 
 			this.collisionTriggers = {};
@@ -49331,12 +49450,12 @@
 
 			this.time = 0;
 
-
-			this.meanUFOSpeed = 0;
-
+			this.player = null;
 			this.vehicle = null;
 			this.scenery = null;
 			this.spark = null;
+
+			this.enterExitPressed = false;
 
 
 			// Sounds
@@ -49370,8 +49489,10 @@
 			this.scene.add( new Mesh( new BoxGeometry(), new MeshBasicMaterial( { color: 'blue' } ) ) );
 
 			// Floor
+			/*
 			const floor = new this.Ammo.btStaticPlaneShape( new this.Ammo.btVector3( 0, 1, 0 ), 0 );
 			this.createRigidBody( null, floor, 0, null, null, null, null );
+			*/
 
 			//this.createDebris( 15, 5, 5, 'yellow', new Vector3( 35, 20, 0 ) );
 
@@ -49389,49 +49510,70 @@
 
 			} );
 
-			const objectsCreator = new ObjectsCreator( this );
-			new ObjectsUtils( this );
+			this.objectsCreator = new ObjectsCreator( this );
+			this.objectsUtils = new ObjectsUtils( this );
 
+			/*
 			const urlParams = new URLSearchParams( window.location.search );
-			const vehicleFunc = urlParams.get( 'plane' ) ? 'createPlane' : 'createUFO';
-			//objectsCreator.createUFO( new Vector3( -540, 750, 0 ), ( vehicle ) => {
-			//objectsCreator.createPlane( new Vector3( -540, 750, 0 ), ( vehicle ) => {
-			objectsCreator[ vehicleFunc ]( new Vector3( -750, 750, 0 ), ( vehicle ) => {
+			const vehicleName = urlParams.get( 'vehicle' );
+			let vehicleFunc = "createUFO";
+			switch ( vehicleName ) {
 
-				scope.vehicle = vehicle;
+				case 'plane':
+					vehicleFunc = 'createPlane';
+					break;
 
-				scope.addCollisionTrigger( vehicle, bar, ( objectsToRemove ) => {
+				case 'ufo':
+					vehicleFunc = 'createUFO';
+					break;
+
+				case 'human':
+					vehicleFunc = 'createHuman';
+					break;
+
+			}
+			*/
+			//this.objectsCreator.createUFO( new Vector3( -540, 750, 0 ), ( vehicle ) => {
+			//this.objectsCreator.createPlane( new Vector3( -540, 750, 0 ), ( vehicle ) => {
+			//this.objectsCreator[ vehicleFunc ]( new Vector3( -1850, 545, 0 ), ( vehicle ) => {
+
+			this.objectsCreator.createHuman( new Vector3( -1850, 545, 0 ), ( human ) => {
+
+				scope.addCollisionTrigger( human, bar, ( objectsToRemove ) => {
 
 					scope.makeDamage( bar, 10000 );
 
 				} );
 
-				objectsCreator.createDepositAndStructure( new Vector3( -400, 655, 0 ) );
-				objectsCreator.createDepositAndStructure( new Vector3( -450, 655, 0 ) );
+				this.objectsCreator.createDepositAndStructure( new Vector3( -400, 655, 0 ) );
+				this.objectsCreator.createDepositAndStructure( new Vector3( -450, 655, 0 ) );
 
-				objectsCreator.createCannon( new Vector3( -295, 560, 0 ), vehicle );
-				objectsCreator.createDepositAndStructure( new Vector3( -350, 550, 0 ) );
+				this.objectsCreator.createCannon( new Vector3( -295, 560, 0 ) );
+				this.objectsCreator.createDepositAndStructure( new Vector3( -350, 550, 0 ) );
 
-				objectsCreator.createCannon( new Vector3( 240, 620, 0 ), vehicle );
-				objectsCreator.createCannon( new Vector3( 280, 620, 0 ), vehicle );
-				objectsCreator.createDepositAndStructure( new Vector3( 326, 620, 0 ) );
+				this.objectsCreator.createCannon( new Vector3( 240, 620, 0 ) );
+				this.objectsCreator.createCannon( new Vector3( 280, 620, 0 ) );
+				this.objectsCreator.createDepositAndStructure( new Vector3( 326, 620, 0 ) );
 
-				objectsCreator.createCannon( new Vector3( 600, 530, 0 ), vehicle );
-				objectsCreator.createCannon( new Vector3( 650, 530, 0 ), vehicle );
+				this.objectsCreator.createCannon( new Vector3( 600, 530, 0 ) );
+				this.objectsCreator.createCannon( new Vector3( 650, 530, 0 ) );
 
-				objectsCreator.createCannon( new Vector3( 700, 510, 0 ), vehicle );
-				objectsCreator.createCannon( new Vector3( 750, 470, 0 ), vehicle );
+				this.objectsCreator.createCannon( new Vector3( 700, 510, 0 ) );
+				this.objectsCreator.createCannon( new Vector3( 750, 470, 0 ) );
 
-				objectsCreator.createDepositAndStructure( new Vector3( 820, 300, 0 ) );
-				objectsCreator.createDepositAndStructure( new Vector3( 860, 300, 0 ) );
-				objectsCreator.createDepositAndStructure( new Vector3( 900, 300, 0 ) );
+				this.objectsCreator.createDepositAndStructure( new Vector3( 820, 300, 0 ) );
+				this.objectsCreator.createDepositAndStructure( new Vector3( 860, 300, 0 ) );
+				this.objectsCreator.createDepositAndStructure( new Vector3( 900, 300, 0 ) );
 
-				objectsCreator.createCannon( new Vector3( 1200, 865, 0 ), vehicle );
-				objectsCreator.createCannon( new Vector3( 1280, 865, 0 ), vehicle );
-				objectsCreator.createCannon( new Vector3( 1360, 865, 0 ), vehicle );
+				this.objectsCreator.createCannon( new Vector3( 1200, 865, 0 ) );
+				this.objectsCreator.createCannon( new Vector3( 1280, 865, 0 ) );
+				this.objectsCreator.createCannon( new Vector3( 1360, 865, 0 ) );
 
-				objectsCreator.createDepositAndStructure( new Vector3( 1450, 860, 0 ) );
-				objectsCreator.createDepositAndStructure( new Vector3( 1500, 840, 0 ) );
+				this.objectsCreator.createDepositAndStructure( new Vector3( 1450, 860, 0 ) );
+				this.objectsCreator.createDepositAndStructure( new Vector3( 1500, 840, 0 ) );
+
+				this.objectsCreator.createPlane( new Vector3( -1750, 555, 0 ) );
+				this.objectsCreator.createUFO( new Vector3( 2786, 50, 0 ) );
 			} );
 
 			this.loadSVG( './scenery1.svg', {}, ( scenery ) => {
@@ -49483,13 +49625,6 @@
 			const paths = data.paths;
 
 			const group = new Group();
-
-		/*
-			group.scale.multiplyScalar( 0.25 );
-			group.position.x = - 70;
-			group.position.y = 70;
-			group.scale.y *= - 1;
-		*/
 
 			for ( let i = 0; i < paths.length; i ++ ) {
 
@@ -49601,6 +49736,24 @@
 
 		}
 
+		removeCollisionTrigger( object1, object2 ) {
+
+			const hash1 = this.getTriggerHash( object1, object2 );
+			const hash2 = this.getTriggerHash( object2, object1 );
+
+			this.collisionTriggers[ hash1 ] = undefined;
+			this.collisionTriggers[ hash2 ] = undefined;
+
+		}
+
+		removeSingleCollisionTrigger( object ) {
+
+			const hash = this.getTriggerHash( object );
+
+			this.collisionTriggers[ hash ] = undefined;
+
+		}
+
 		assignDamageTrigger( object, shield, trigger ) {
 
 			object.userData.shield = shield;
@@ -49621,6 +49774,86 @@
 
 			if ( object.userData.damage ) object.userData.damage( damage );
 			else if ( object.userData.mass > 0 ) objectsToRemove.push( object );
+
+		}
+
+		enterVehicle( human, vehicle, objectsToRemove ) {
+
+			if ( ! vehicle.isVehicle || vehicle.userData.occupied ) return;
+
+			objectsToRemove.push( human );
+
+			if ( this.vehicle ) {
+
+				if ( this.vehicle.userData.actuators ) {
+
+					for ( let i = 0, l = this.vehicle.userData.actuators.length; i < l; i ++ ) {
+
+						this.vehicle.userData.actuators[ i ].active = false;
+
+					}
+
+				}
+
+				this.vehicle.userData.occupied = false;
+
+			}
+
+			this.player = null;
+			this.vehicle = vehicle;
+			this.vehicle.userData.occupied = true;
+
+			if ( this.vehicle.userData.actuators ) {
+
+				for ( let i = 0, l = this.vehicle.userData.actuators.length; i < l; i ++ ) {
+
+					this.vehicle.userData.actuators[ i ].active = true;
+
+				}
+
+			}
+
+		}
+
+		exitVehicle( vehicle ) {
+
+			if ( ! vehicle.isVehicle || ! vehicle.userData.occupied ) return;
+
+			const scope = this;
+
+			this.objectsCreator.createHuman( vehicle.position, ( human ) => {
+
+				vehicle.userData.occupied = false;
+				if ( vehicle.userData.actuators ) {
+
+					for ( let i = 0, l = vehicle.userData.actuators.length; i < l; i ++ ) {
+
+						vehicle.userData.actuators[ i ].active = false;
+
+					}
+
+				}
+
+				scope.player = human;
+				scope.vehicle = human;
+				scope.vehicle.userData.occupied = true;
+
+				scope.refreshAllVehicles();
+
+			} );
+
+		}
+
+		refreshAllVehicles() {
+
+			for ( let i = 0, l = this.vehicles.length; i < l; i ++ ) {
+
+				const vehicle = this.vehicles[ i ];
+
+				vehicle.userData.vehicleActuator.removeFrom( vehicle );
+				vehicle.userData.vehicleActuator.addTo( vehicle );
+
+			}
 
 		}
 
@@ -50071,15 +50304,15 @@
 
 				this.camera.position.x = this.vehicle.position.x;
 				this.camera.position.y = this.vehicle.position.y;
-
-				//const speed = this.vehicle.userData.rigidBody.getLinearVelocity().length();
-				//this.meanUFOSpeed = this.meanUFOSpeed * 0.99 + speed * 0.01;
-
-	//			if ( this.meanUFOSpeed > 0 ) this.camera.zoom = Math.max( 0.5, Math.min( 1, 1 / this.meanUFOSpeed ) );
-	//			else this.camera.zoom = 1;
-	//console.log( this.camera.zoom );
-
 				this.camera.updateProjectionMatrix();
+
+				const enterExitPressed = this.controller.fire1 > 0 && this.controller.fire2 > 0;
+				if ( ! this.enterExitPressed && enterExitPressed ) {
+
+					this.exitVehicle( this.vehicle );
+
+				}
+				this.enterExitPressed = enterExitPressed;
 
 			}
 
@@ -50165,6 +50398,9 @@
 				// If no point has contact, abort
 				if ( ! contact ) continue;
 
+				threeObject0.userData.collided = true;
+				threeObject1.userData.collided = true;
+
 				const hash = this.getTriggerHash( threeObject0, threeObject1 );
 				const trigger = this.collisionTriggers[ hash ];
 				if ( trigger ) {
@@ -50208,6 +50444,12 @@
 	const yResolution = 480;
 	const aspect = xResolution / yResolution;
 
+	let connectedGamepads = [];
+	let joy1GamepadIndex = null;
+	let joy2GamepadIndex = null;
+	let joy1Controller = null;
+	let joy2Controller = null;
+
 	class App {
 
 		init() {
@@ -50219,8 +50461,10 @@
 
 				Ammo = AmmoLib;
 
-				const cameraWidth = xResolution * 0.5;
-				const cameraHeight = yResolution * 0.5;
+				const f = 0.5;
+				//const f = 0.2;
+				const cameraWidth = xResolution * f;
+				const cameraHeight = yResolution * f;
 				camera = new OrthographicCamera( - cameraWidth, cameraWidth, cameraHeight, - cameraHeight, 0.1, 2000 );
 				//camera = new PerspectiveCamera( 45, xResolution / yResolution, 0.1, 2000 );
 				camera.position.set( 0, 0, 20 );
@@ -50309,6 +50553,10 @@
 
 				game = new Game( renderer, camera, Ammo );
 
+				joy1Controller = game.controller;
+				window.addEventListener( 'gamepadconnected', onGamepadConnected );
+				window.addEventListener( 'gamepaddisconnected', onGamepadDisconnected );
+
 				onWindowResize();
 				animate();
 
@@ -50368,13 +50616,118 @@
 
 	}
 
+	function onGamepadConnected( e ) {
+
+		const gamepad = e.gamepad;
+
+		console.log( "Gamepad connected: " + gamepad.index + ", id:" + gamepad.id + ", num buttons: " + gamepad.buttons.length + ", num axes: " + gamepad.axes.length + ", mapping: " + gamepad.mapping + "." );
+
+		for ( let i = 0, n = connectedGamepads.length; i < n; i ++ ) {
+
+			if ( connectedGamepads[ i ].id === gamepad.id ) {
+
+				return;
+
+			}
+
+		}
+
+		if ( joy1GamepadIndex === null ) {
+
+			joy1GamepadIndex = gamepad.index;
+
+		}
+		else if ( joy2GamepadIndex === null ) {
+
+			joy2GamepadIndex = gamepad.index;
+
+		}
+
+		connectedGamepads.push( gamepad );
+
+	}
+
+	function onGamepadDisconnected( e ) {
+
+		const gamepad = e.gamepad;
+
+		console.log( "Gamepad disconnected, index: " + e.gamepad.index + ", id:" + e.gamepad.id );
+
+		for ( let i = 0, n = connectedGamepads.length; i < n; i ++ ) {
+
+			if ( connectedGamepads[ i ].id === gamepad.id ) {
+
+				if ( joy1GamepadIndex === gamepad.index ) {
+
+					joy1GamepadIndex = null;
+
+				}
+				else if ( hostGamepadMappingJoy2 === gamepad.index ) {
+
+					joy2GamepadIndex = null;
+
+				}
+
+				connectedGamepads.splice( i, 1 );
+
+				return;
+
+			}
+
+		}
+
+	}
+
+	function pollGamepads() {
+
+		if ( joy1GamepadIndex !== null && joy1Controller !== null) {
+
+			pollGamepad( joy1GamepadIndex, joy1Controller );
+
+		}
+
+		if ( joy2GamepadIndex !== null && joy2Controller !== null) {
+
+			pollGamepad( joy2GamepadIndex, joy2Controller );
+
+		}
+
+
+	}
+
+	function pollGamepad( gamepadIndex, controller ) {
+
+		const gamepad = navigator.getGamepads()[ gamepadIndex ];
+
+		if ( ! gamepad ) return;
+
+		var numButtons = gamepad.buttons.length;
+		for ( let i = 0, n = Math.min( numButtons, 2 ); i < n; i ++ ) {
+
+			const pressed = gamepad.buttons[ i ].pressed;
+
+			const button = i === 0 ? 'fire1' : 'fire2';
+			controller[ button ] = pressed ? 1 : 0;
+
+			if ( pressed ) console.log( button );
+
+		}
+
+		controller.x = gamepad.axes[ 0 ];
+		controller.y = - gamepad.axes[ 1 ];
+
+	}
+
 	function animate() {
 
 		const deltaTime = app$1.clock.getDelta();
 
 		requestAnimationFrame( animate );
 
+		pollGamepads();
+
 		game.step( deltaTime );
+		//game.step( 1 / 60 );
 
 		renderer.render( game.scene, camera );
 

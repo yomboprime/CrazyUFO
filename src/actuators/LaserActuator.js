@@ -14,7 +14,6 @@ class LaserActuator extends Actuator {
 
 		super( game );
 
-		this.object = null;
 		this.controller = null;
 
 		this.spark = null;
@@ -30,8 +29,7 @@ class LaserActuator extends Actuator {
 
 	addTo( object ) {
 
-		this.object = object;
-		this.active = true;
+		super.addTo( object );
 
 		this.game.loadSVG( './spark.svg', {}, ( spark ) => {
 
@@ -52,6 +50,8 @@ class LaserActuator extends Actuator {
 
 	removeFrom( object ) {
 
+		super.removeFrom( object );
+
 		this.game.scene.remove( this.spark );
 		this.game.scene.remove( this.laser );
 		this.object = null;
@@ -61,6 +61,8 @@ class LaserActuator extends Actuator {
 	actuate( deltaTime ) {
 
 		if ( ! this.spark ) return;
+
+		if ( ! this.active ) return;
 
 		if ( this.controller.fire1 > 0 && this.controller.fire2 === 0 ) {
 

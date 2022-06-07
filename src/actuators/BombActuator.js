@@ -16,7 +16,6 @@ class BombActuator extends Actuator {
 
 		super( game );
 
-		this.object = null;
 		this.controller = null;
 
 		this.game.loadSVG( './bomb.svg', {}, ( bomb ) => {
@@ -34,22 +33,11 @@ class BombActuator extends Actuator {
 
 	}
 
-	addTo( object ) {
-
-		this.object = object;
-		this.active = true;
-
-	}
-
-	removeFrom( object ) {
-
-		this.object = null;
-
-	}
-
 	actuate( deltaTime ) {
 
 		if ( ! this.bomb ) return;
+
+		if ( ! this.active ) return;
 
 		if ( this.game.time < this.nextBombTime ) return;
 

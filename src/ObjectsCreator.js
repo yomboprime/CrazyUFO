@@ -8,6 +8,7 @@ import { PlaneActuator } from './actuators/PlaneActuator.js';
 import { UFOActuator } from './actuators/UFOActuator.js';
 import { BombActuator } from './actuators/BombActuator.js';
 import { TurretActuator } from './actuators/TurretActuator.js';
+import { HumanActuator } from './actuators/HumanActuator.js';
 
 class ObjectsCreator {
 
@@ -15,7 +16,43 @@ class ObjectsCreator {
 
 		this.game = game;
 
+		this.tempBtVec3_1 = new game.Ammo.btVector3( 0, 0, 0 );
+
 		this.objectsUtils = new ObjectsUtils( game );
+
+	}
+
+	createHuman( position, callback ) {
+
+		const game = this.game;
+
+		this.game.loadSVG( './human.svg', {}, ( human ) => {
+
+			game.player = human;
+			game.vehicle = human;
+
+			human.position.copy( position );
+			human.userData.mass = 3;
+
+			let shape = new game.Ammo.btCapsuleShape( 2, 5 );
+			shape.setMargin( game.margin );
+
+			const body = game.createRigidBody( human, shape, human.userData.mass, human.position, human.quaternion, human.userData.velocity );
+
+			const humanActuator = new HumanActuator( game );
+			humanActuator.addTo( human );
+			humanActuator.controller = game.controller;
+			game.actuators.push( humanActuator );
+
+			game.assignDamageTrigger( human, 150, () => {
+
+				game.removeDebris( human );
+
+			} );
+
+			if ( callback ) callback( human );
+
+		} );
 
 	}
 
@@ -26,6 +63,8 @@ class ObjectsCreator {
 		const game = this.game;
 
 		this.objectsUtils.createObject( './toyplane.svg', ( plane ) => {
+
+			game.vehicles.push( plane );
 
 			const planeActuator = new PlaneActuator( game );
 			planeActuator.addTo( plane );
@@ -63,6 +102,8 @@ class ObjectsCreator {
 		const game = this.game;
 
 		this.objectsUtils.createObject( './ufo.svg', ( ufo ) => {
+
+			game.vehicles.push( ufo );
 
 			const ufoActuator = new UFOActuator( game );
 			ufoActuator.addTo( ufo );
@@ -127,7 +168,7 @@ class ObjectsCreator {
 
 	}
 
-	createCannon( position, target, callback ) {
+	createCannon( position, callback ) {
 
 		const scope = this;
 
@@ -170,7 +211,6 @@ class ObjectsCreator {
 
 					const turretActuator = new TurretActuator( game );
 					turretActuator.addTo( cannon );
-					turretActuator.target = target;
 					game.actuators.push( turretActuator );
 
 					if ( callback ) callback();

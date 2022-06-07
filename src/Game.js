@@ -71,6 +71,7 @@ class Game {
 		this.initPhysics();
 
 		this.actuators = [];
+		this.vehicles = [];
 		this.controller = new Controller();
 
 		this.collisionTriggers = {};
@@ -80,12 +81,12 @@ class Game {
 
 		this.time = 0;
 
-
-		this.meanUFOSpeed = 0;
-
+		this.player = null;
 		this.vehicle = null;
 		this.scenery = null;
 		this.spark = null;
+
+		this.enterExitPressed = false;
 
 
 		// Sounds
@@ -119,8 +120,10 @@ class Game {
 		this.scene.add( new Mesh( new BoxGeometry(), new MeshBasicMaterial( { color: 'blue' } ) ) );
 
 		// Floor
+		/*
 		const floor = new this.Ammo.btStaticPlaneShape( new this.Ammo.btVector3( 0, 1, 0 ), 0 );
 		this.createRigidBody( null, floor, 0, null, null, null, null );
+		*/
 
 		//this.createDebris( 15, 5, 5, 'yellow', new Vector3( 35, 20, 0 ) );
 
@@ -138,49 +141,70 @@ class Game {
 
 		} );
 
-		const objectsCreator = new ObjectsCreator( this );
-		const objectsUtils = new ObjectsUtils( this );
+		this.objectsCreator = new ObjectsCreator( this );
+		this.objectsUtils = new ObjectsUtils( this );
 
+		/*
 		const urlParams = new URLSearchParams( window.location.search );
-		const vehicleFunc = urlParams.get( 'plane' ) ? 'createPlane' : 'createUFO';
-		//objectsCreator.createUFO( new Vector3( -540, 750, 0 ), ( vehicle ) => {
-		//objectsCreator.createPlane( new Vector3( -540, 750, 0 ), ( vehicle ) => {
-		objectsCreator[ vehicleFunc ]( new Vector3( -750, 750, 0 ), ( vehicle ) => {
+		const vehicleName = urlParams.get( 'vehicle' );
+		let vehicleFunc = "createUFO";
+		switch ( vehicleName ) {
 
-			scope.vehicle = vehicle;
+			case 'plane':
+				vehicleFunc = 'createPlane';
+				break;
 
-			scope.addCollisionTrigger( vehicle, bar, ( objectsToRemove ) => {
+			case 'ufo':
+				vehicleFunc = 'createUFO';
+				break;
+
+			case 'human':
+				vehicleFunc = 'createHuman';
+				break;
+
+		}
+		*/
+		//this.objectsCreator.createUFO( new Vector3( -540, 750, 0 ), ( vehicle ) => {
+		//this.objectsCreator.createPlane( new Vector3( -540, 750, 0 ), ( vehicle ) => {
+		//this.objectsCreator[ vehicleFunc ]( new Vector3( -1850, 545, 0 ), ( vehicle ) => {
+
+		this.objectsCreator.createHuman( new Vector3( -1850, 545, 0 ), ( human ) => {
+
+			scope.addCollisionTrigger( human, bar, ( objectsToRemove ) => {
 
 				scope.makeDamage( bar, 10000 );
 
 			} );
 
-			objectsCreator.createDepositAndStructure( new Vector3( -400, 655, 0 ) );
-			objectsCreator.createDepositAndStructure( new Vector3( -450, 655, 0 ) );
+			this.objectsCreator.createDepositAndStructure( new Vector3( -400, 655, 0 ) );
+			this.objectsCreator.createDepositAndStructure( new Vector3( -450, 655, 0 ) );
 
-			objectsCreator.createCannon( new Vector3( -295, 560, 0 ), vehicle );
-			objectsCreator.createDepositAndStructure( new Vector3( -350, 550, 0 ) );
+			this.objectsCreator.createCannon( new Vector3( -295, 560, 0 ) );
+			this.objectsCreator.createDepositAndStructure( new Vector3( -350, 550, 0 ) );
 
-			objectsCreator.createCannon( new Vector3( 240, 620, 0 ), vehicle );
-			objectsCreator.createCannon( new Vector3( 280, 620, 0 ), vehicle );
-			objectsCreator.createDepositAndStructure( new Vector3( 326, 620, 0 ) );
+			this.objectsCreator.createCannon( new Vector3( 240, 620, 0 ) );
+			this.objectsCreator.createCannon( new Vector3( 280, 620, 0 ) );
+			this.objectsCreator.createDepositAndStructure( new Vector3( 326, 620, 0 ) );
 
-			objectsCreator.createCannon( new Vector3( 600, 530, 0 ), vehicle );
-			objectsCreator.createCannon( new Vector3( 650, 530, 0 ), vehicle );
+			this.objectsCreator.createCannon( new Vector3( 600, 530, 0 ) );
+			this.objectsCreator.createCannon( new Vector3( 650, 530, 0 ) );
 
-			objectsCreator.createCannon( new Vector3( 700, 510, 0 ), vehicle );
-			objectsCreator.createCannon( new Vector3( 750, 470, 0 ), vehicle );
+			this.objectsCreator.createCannon( new Vector3( 700, 510, 0 ) );
+			this.objectsCreator.createCannon( new Vector3( 750, 470, 0 ) );
 
-			objectsCreator.createDepositAndStructure( new Vector3( 820, 300, 0 ) );
-			objectsCreator.createDepositAndStructure( new Vector3( 860, 300, 0 ) );
-			objectsCreator.createDepositAndStructure( new Vector3( 900, 300, 0 ) );
+			this.objectsCreator.createDepositAndStructure( new Vector3( 820, 300, 0 ) );
+			this.objectsCreator.createDepositAndStructure( new Vector3( 860, 300, 0 ) );
+			this.objectsCreator.createDepositAndStructure( new Vector3( 900, 300, 0 ) );
 
-			objectsCreator.createCannon( new Vector3( 1200, 865, 0 ), vehicle );
-			objectsCreator.createCannon( new Vector3( 1280, 865, 0 ), vehicle );
-			objectsCreator.createCannon( new Vector3( 1360, 865, 0 ), vehicle );
+			this.objectsCreator.createCannon( new Vector3( 1200, 865, 0 ) );
+			this.objectsCreator.createCannon( new Vector3( 1280, 865, 0 ) );
+			this.objectsCreator.createCannon( new Vector3( 1360, 865, 0 ) );
 
-			objectsCreator.createDepositAndStructure( new Vector3( 1450, 860, 0 ) );
-			objectsCreator.createDepositAndStructure( new Vector3( 1500, 840, 0 ) );
+			this.objectsCreator.createDepositAndStructure( new Vector3( 1450, 860, 0 ) );
+			this.objectsCreator.createDepositAndStructure( new Vector3( 1500, 840, 0 ) );
+
+			this.objectsCreator.createPlane( new Vector3( -1750, 555, 0 ) );
+			this.objectsCreator.createUFO( new Vector3( 2786, 50, 0 ) );
 		} );
 
 		this.loadSVG( './scenery1.svg', {}, ( scenery ) => {
@@ -232,13 +256,6 @@ class Game {
 		const paths = data.paths;
 
 		const group = new Group();
-
-	/*
-		group.scale.multiplyScalar( 0.25 );
-		group.position.x = - 70;
-		group.position.y = 70;
-		group.scale.y *= - 1;
-	*/
 
 		for ( let i = 0; i < paths.length; i ++ ) {
 
@@ -356,6 +373,24 @@ class Game {
 
 	}
 
+	removeCollisionTrigger( object1, object2 ) {
+
+		const hash1 = this.getTriggerHash( object1, object2 );
+		const hash2 = this.getTriggerHash( object2, object1 );
+
+		this.collisionTriggers[ hash1 ] = undefined;
+		this.collisionTriggers[ hash2 ] = undefined;
+
+	}
+
+	removeSingleCollisionTrigger( object ) {
+
+		const hash = this.getTriggerHash( object );
+
+		this.collisionTriggers[ hash ] = undefined;
+
+	}
+
 	assignDamageTrigger( object, shield, trigger ) {
 
 		object.userData.shield = shield;
@@ -377,6 +412,86 @@ class Game {
 
 		if ( object.userData.damage ) object.userData.damage( damage );
 		else if ( object.userData.mass > 0 ) objectsToRemove.push( object );
+
+	}
+
+	enterVehicle( human, vehicle, objectsToRemove ) {
+
+		if ( ! vehicle.isVehicle || vehicle.userData.occupied ) return;
+
+		objectsToRemove.push( human );
+
+		if ( this.vehicle ) {
+
+			if ( this.vehicle.userData.actuators ) {
+
+				for ( let i = 0, l = this.vehicle.userData.actuators.length; i < l; i ++ ) {
+
+					this.vehicle.userData.actuators[ i ].active = false;
+
+				}
+
+			}
+
+			this.vehicle.userData.occupied = false;
+
+		}
+
+		this.player = null;
+		this.vehicle = vehicle;
+		this.vehicle.userData.occupied = true;
+
+		if ( this.vehicle.userData.actuators ) {
+
+			for ( let i = 0, l = this.vehicle.userData.actuators.length; i < l; i ++ ) {
+
+				this.vehicle.userData.actuators[ i ].active = true;
+
+			}
+
+		}
+
+	}
+
+	exitVehicle( vehicle ) {
+
+		if ( ! vehicle.isVehicle || ! vehicle.userData.occupied ) return;
+
+		const scope = this;
+
+		this.objectsCreator.createHuman( vehicle.position, ( human ) => {
+
+			vehicle.userData.occupied = false;
+			if ( vehicle.userData.actuators ) {
+
+				for ( let i = 0, l = vehicle.userData.actuators.length; i < l; i ++ ) {
+
+					vehicle.userData.actuators[ i ].active = false;
+
+				}
+
+			}
+
+			scope.player = human;
+			scope.vehicle = human;
+			scope.vehicle.userData.occupied = true;
+
+			scope.refreshAllVehicles();
+
+		} );
+
+	}
+
+	refreshAllVehicles() {
+
+		for ( let i = 0, l = this.vehicles.length; i < l; i ++ ) {
+
+			const vehicle = this.vehicles[ i ];
+
+			vehicle.userData.vehicleActuator.removeFrom( vehicle );
+			vehicle.userData.vehicleActuator.addTo( vehicle );
+
+		}
 
 	}
 
@@ -827,15 +942,15 @@ class Game {
 
 			this.camera.position.x = this.vehicle.position.x;
 			this.camera.position.y = this.vehicle.position.y;
-
-			//const speed = this.vehicle.userData.rigidBody.getLinearVelocity().length();
-			//this.meanUFOSpeed = this.meanUFOSpeed * 0.99 + speed * 0.01;
-
-//			if ( this.meanUFOSpeed > 0 ) this.camera.zoom = Math.max( 0.5, Math.min( 1, 1 / this.meanUFOSpeed ) );
-//			else this.camera.zoom = 1;
-//console.log( this.camera.zoom );
-
 			this.camera.updateProjectionMatrix();
+
+			const enterExitPressed = this.controller.fire1 > 0 && this.controller.fire2 > 0;
+			if ( ! this.enterExitPressed && enterExitPressed ) {
+
+				this.exitVehicle( this.vehicle );
+
+			}
+			this.enterExitPressed = enterExitPressed;
 
 		}
 
@@ -920,6 +1035,9 @@ class Game {
 
 			// If no point has contact, abort
 			if ( ! contact ) continue;
+
+			threeObject0.userData.collided = true;
+			threeObject1.userData.collided = true;
 
 			const hash = this.getTriggerHash( threeObject0, threeObject1 );
 			const trigger = this.collisionTriggers[ hash ];

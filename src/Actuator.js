@@ -5,17 +5,29 @@ class Actuator {
 
 		this.game = game;
 		this.active = false;
+		this.object = null;
 
 	}
 
 	addTo( object ) {
 
-		// Nothing to do
+		if ( ! object.userData.actuators ) {
+
+			object.userData.actuators = [];
+
+		}
+
+		object.userData.actuators.push( this );
+
+		this.object = object;
 	}
 
 	removeFrom( object ) {
 
-		// Nothing to do
+		const i = object.userData.actuators.indexOf( this );
+		if ( i >= 0 ) object.userData.actuators.splice( i, 1 );
+
+		this.object = null;
 
 	}
 

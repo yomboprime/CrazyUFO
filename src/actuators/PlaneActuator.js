@@ -5,15 +5,13 @@ import {
 
 
 import { Actuator } from '../Actuator.js';
+import { VehicleActuator } from './VehicleActuator.js';
 
-class PlaneActuator extends Actuator {
+class PlaneActuator extends VehicleActuator {
 
 	constructor( game ) {
 
 		super( game );
-
-		this.object = null;
-		this.controller = null;
 
 		this.maxVelocity = 200;
 
@@ -31,8 +29,7 @@ class PlaneActuator extends Actuator {
 
 	addTo( object ) {
 
-		this.object = object;
-		this.active = true;
+		super.addTo( object );
 
 		this.altitudeLabel = document.createElement( 'span' );
 		this.altitudeLabel.style.position = 'absolute';
@@ -46,7 +43,7 @@ class PlaneActuator extends Actuator {
 
 	removeFrom( object ) {
 
-		this.object = null;
+		super.removeFrom( object );
 
 		document.body.removeChild( this.altitudeLabel );
 
@@ -54,11 +51,13 @@ class PlaneActuator extends Actuator {
 
 	actuate( deltaTime ) {
 
+		if ( ! this.active ) return;
+
 		const prevFlipPressed = this.flipPressed;
-		this.flipPressed = this.controller.y < 0;
+		this.flipPressed = this.controller.y < - 0.5;
 		if ( this.flipPressed && ! prevFlipPressed ) this.object.scale.y *= -1;
 
-		let thrusterControl = Math.max( this.active ? 0.25 : 0, this.controller.y );
+		let thrusterControl = Math.max( 0.25, this.controller.y );
 		const velocity = thrusterControl * this.maxVelocity;
 		const thrustForce = 100;
 		this.tempVec3_1.set( velocity, 0, 0 );
@@ -88,7 +87,8 @@ class PlaneActuator extends Actuator {
 		if ( objectHit ) {
 
 			const altitude = this.tempVec3_3.sub( this.tempVec3_1 ).length();
-			this.altitudeLabel.innerHTML = "Altitude:" + ( altitude < 2000 ? Math.floor( altitude ) + " m" : "Out Of Range" );
+			this.altitudeLabel.innerHTML = "Altitude:" + ( altitude < 2000 ? Math.floor( altitude ) + " m" : "Out Of Range" )
+				;//+ " X: " + this.object.position.x.toFixed( 2 ) + "Y: " + this.object.position.y.toFixed( 2 );
 
 		}
 

@@ -12,19 +12,6 @@ class TimerActuator extends Actuator {
 
 	}
 
-	addTo( object ) {
-
-		this.object = object;
-		this.active = true;
-
-	}
-
-	removeFrom( object ) {
-
-		this.object = null;
-
-	}
-
 	actuate( deltaTime ) {
 
 		this.isExpirated = this.expiration < this.game.time;
